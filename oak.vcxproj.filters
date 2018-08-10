@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="dummy">
+      <UniqueIdentifier>{80016ec3-580d-4760-90ea-21ed4eb012c5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="oak\block.h">
@@ -27,8 +30,11 @@
     <ClInclude Include="oak\flowgraph.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="oak\dummy_block.h">
+    <ClInclude Include="oak\data_type.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="oak\dummy\dummy_block.h">
+      <Filter>dummy</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -44,8 +50,11 @@
     <ClCompile Include="oak\block_detail.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="oak\dummy_block.cpp">
+    <ClCompile Include="oak\data_type.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="oak\dummy\dummy_block.cpp">
+      <Filter>dummy</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

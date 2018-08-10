@@ -21,14 +21,16 @@
   <ItemGroup>
     <ClInclude Include="oak\block.h" />
     <ClInclude Include="oak\block_detail.h" />
-    <ClInclude Include="oak\dummy_block.h" />
+    <ClInclude Include="oak\data_type.h" />
+    <ClInclude Include="oak\dummy\dummy_block.h" />
     <ClInclude Include="oak\flowgraph.h" />
     <ClInclude Include="oak\top_block.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="oak\block.cpp" />
     <ClCompile Include="oak\block_detail.cpp" />
-    <ClCompile Include="oak\dummy_block.cpp" />
+    <ClCompile Include="oak\data_type.cpp" />
+    <ClCompile Include="oak\dummy\dummy_block.cpp" />
     <ClCompile Include="oak\flowgraph.cpp" />
     <ClCompile Include="oak\top_block.cpp" />
   </ItemGroup>

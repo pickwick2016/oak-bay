@@ -22,15 +22,19 @@ namespace oak {
 	{
 		Port(Block * block = nullptr, unsigned int idx = 0);
 
-		Block * block;
-		unsigned int index;
+		Block * block;		// 端口对应模块
+		unsigned int index; // 端口序号.
 	};
 
 
 	// 端口签名.
 	struct Signature
 	{
+		Signature(int type, bool need = true, int count = 1);
 
+		int type;	// 数据类型
+		bool need;	// 是否必需
+		int count;	// 最小数据数量.
 	};
 
 	// 端口签名列表.
