@@ -18,5 +18,34 @@
     <ClInclude Include="oak\block.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="oak\top_block.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="oak\block_detail.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="oak\flowgraph.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="oak\dummy_block.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="oak\block.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="oak\top_block.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="oak\flowgraph.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="oak\block_detail.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="oak\dummy_block.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
