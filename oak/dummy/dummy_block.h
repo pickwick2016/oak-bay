@@ -15,16 +15,49 @@
 
 namespace dummy {
 
+	using namespace oak;
+
 	class DummySource : public oak::Block
 	{
+	public:
+		DummySource(int count = 1024);
+
+	public:
+		virtual int work(vector_raw_data & inputs, vector_raw_data & outputs);
+		virtual void reset();
+
+	private:
+		int m_totalCount;
+		int m_currentCount;
 	};
 
 	class DummyBlock : public oak::Block
 	{
+	public:
+		DummyBlock();
+
+	public:
+		virtual int work(vector_raw_data & inputs, vector_raw_data & outputs);
 	};
 
+	/**
+	 * 模拟数据槽.
+	 * 功能：记录接收到的数据总数.
+	 */
 	class DummySink : public oak::Block
 	{
+	public:
+		DummySink();
+
+	public:
+		virtual int work(vector_raw_data & inputs, vector_raw_data & outputs);
+		virtual void reset();
+
+	public:
+		int count();
+
+	private:
+		int m_count;
 	};
 
 } // namespace dummy

@@ -27,14 +27,17 @@
     <ClInclude Include="oak\block_detail.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="oak\flowgraph.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="oak\data_type.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="oak\dummy\dummy_block.h">
       <Filter>dummy</Filter>
+    </ClInclude>
+    <ClInclude Include="oak\buffer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="oak\block_runtime.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -42,9 +45,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="oak\top_block.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="oak\flowgraph.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="oak\block_detail.cpp">
@@ -55,6 +55,12 @@
     </ClCompile>
     <ClCompile Include="oak\dummy\dummy_block.cpp">
       <Filter>dummy</Filter>
+    </ClCompile>
+    <ClCompile Include="oak\buffer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="oak\block_runtime.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

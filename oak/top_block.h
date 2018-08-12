@@ -16,12 +16,15 @@
 
 #include <oak/block.h>
 #include <oak/block_detail.h>
-#include <oak/flowgraph.h>
 
 namespace oak {
 
-	/**
-	 * 顶层模块.
+	class BlockRuntime;
+
+	/** 顶层模块.
+	 * 1.管理模块.
+	 * 2.维护连接关系.
+	 * 3.负责运行.
 	 */
 	class TopBlock : public Block
 	{
@@ -30,13 +33,45 @@ namespace oak {
 		virtual ~TopBlock();
 
 	public:
-		void add(Block * block);
-		void remove(Block * block);
-		bool contain(Block * block);
-		int count() const;
+		virtual int work(vector_raw_data & inputs, vector_raw_data & outputs);
 
-		void connect(Port source, Port dest);
+	public:
+		// 添加模块(接管)
+		Block * add(Block * block);
+
+		// 删除模块(销毁模块)
+		void remove(Block * block);
+		
+		// 是否包含模块
+		bool contain(Block * block);
+		
+		// 包含的模块数量.
+		unsigned int count() const;
+
+		// 所有包含的模块.
+		std::vector<Block *> blocks();
+
+	public:
+		// 连接模块.
+		bool connect(Port source, Port dest);
+		
+		// 断开连接（删除连接关系）.
 		void disconnect(Port source, Port dest);
+
+		// 是否包含连接.
+		bool contain(Port source, Port dest);
+
+		// 获取连接关系.
+		std::vector<std::pair<Port, Port>> connections() const;
+
+		// 接口是否匹配.
+		bool isMatch(Port source, Port dest);
+
+		// 获取连接.
+		std::vector<Port> getDestPorts(Port source);
+
+		Port getSourcePort(Port dest);
+
 
 	public:
 		int start();
@@ -44,7 +79,9 @@ namespace oak {
 
 	private:
 		std::vector<std::shared_ptr<Block>> m_blocks;
-		std::shared_ptr<Flowgraph> m_flowgraph;
+		std::vector<std::pair<Port, Port>> m_connections;
+		
+		std::shared_ptr<BlockRuntime> m_runtime;
 	};
 
 } // namespace oak

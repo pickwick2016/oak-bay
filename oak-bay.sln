@@ -5,6 +5,11 @@ VisualStudioVersion = 15.0.27703.2047
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oak", "oak.vcxproj", "{4BEC5042-05A4-4436-A174-587566BC0AE5}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test.vcxproj", "{EFA0538F-0C58-41E1-B353-19DE25E6CF15}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4BEC5042-05A4-4436-A174-587566BC0AE5} = {4BEC5042-05A4-4436-A174-587566BC0AE5}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +26,14 @@ Global
 		{4BEC5042-05A4-4436-A174-587566BC0AE5}.Release|x64.Build.0 = Release|x64
 		{4BEC5042-05A4-4436-A174-587566BC0AE5}.Release|x86.ActiveCfg = Release|Win32
 		{4BEC5042-05A4-4436-A174-587566BC0AE5}.Release|x86.Build.0 = Release|Win32
+		{EFA0538F-0C58-41E1-B353-19DE25E6CF15}.Debug|x64.ActiveCfg = Debug|x64
+		{EFA0538F-0C58-41E1-B353-19DE25E6CF15}.Debug|x64.Build.0 = Debug|x64
+		{EFA0538F-0C58-41E1-B353-19DE25E6CF15}.Debug|x86.ActiveCfg = Debug|Win32
+		{EFA0538F-0C58-41E1-B353-19DE25E6CF15}.Debug|x86.Build.0 = Debug|Win32
+		{EFA0538F-0C58-41E1-B353-19DE25E6CF15}.Release|x64.ActiveCfg = Release|x64
+		{EFA0538F-0C58-41E1-B353-19DE25E6CF15}.Release|x64.Build.0 = Release|x64
+		{EFA0538F-0C58-41E1-B353-19DE25E6CF15}.Release|x86.ActiveCfg = Release|Win32
+		{EFA0538F-0C58-41E1-B353-19DE25E6CF15}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -25,15 +25,25 @@ namespace oak {
 		virtual ~Block();
 
 	public:
-		// 处理.
-		virtual int work() = 0;
+		/** 执行处理操作.
+		 * 对输入、输出缓冲区进行操作，更新缓冲区数据.
+		 * @param inputs 输入缓冲区.
+		 * @param outputs 输出缓冲区.
+		 * @return 处理结果状态.
+		 */
+		virtual int work(vector_raw_data & inputs, vector_raw_data & outputs) = 0;
+
+		// 重置模块状态.
+		virtual void reset() {}
 
 	public:
 		// 获取输入签名.
 		SignatureList inputSignatures();
-		
+		Signature inputSignature(unsigned int index);
+
 		// 获取输出签名.
 		SignatureList outputSignatures();
+		Signature outputSignature(unsigned int index);
 
 	protected:
 		SignatureList m_inputSigs, m_outputSigs;
