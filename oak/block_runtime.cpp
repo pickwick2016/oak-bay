@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <set>
 #include <iterator>
+#include <assert.h>
 
 #include <boost/bind.hpp>
 
@@ -15,47 +16,84 @@ namespace oak {
 	{
 	}
 
-	int BlockRuntime::work()
+	bool BlockRuntime::validate()
 	{
-		std::vector<Block *> blocks = flatten();
-		if (! blocks.empty()) {
-			std::vector<int> results(blocks.size(), WorkResult::Error);
-			for (unsigned int i = 0; i < blocks.size(); i++) {
-				results[i] = runBlock(blocks[i]);
-				if (results[i] == WorkResult::Error) {
-					return WorkResult::Error;
-				}
-			}
-
-			return WorkResult::Ok;
+		// 检查状态是否变化.
+		auto connections = m_parent->connections();
+		if (m_connections == connections) {
+			return ! m_queue.empty();
 		}
 
-		return WorkResult::Error;
+		m_connections = connections;
+		auto blocks = flatten();
+		if (blocks.empty()) {
+			return false;
+		}
 
+		// 重新设置缓冲区.
+		setupBuffers();
+
+		return true;
 	}
 
-	void BlockRuntime::resetBuffers()
+	int BlockRuntime::work()
+	{
+		assert(!m_queue.empty());
+		//if (m_queue.empty())
+		//	return WorkResult::Error;
+
+		std::vector<int> results(m_queue.size(), WorkResult::Error);
+		for (unsigned int i = 0; i < m_queue.size(); i++) {
+			results[i] = runBlock(m_queue[i]);
+			if (results[i] == WorkResult::Error) {
+				return WorkResult::Error;
+			}
+		}
+
+		return WorkResult::Ok;
+	}
+
+	bool BlockRuntime::setupBuffers()
 	{
 		m_inputBuffers.clear();
 		m_outputBuffers.clear();
 
-		std::set<Port> outputPorts, inputPorts;
-
+		// 1.记录输入、输出端口.
+		std::set<Port> sourcePorts;
 		auto connections = m_parent->connections();
 		for (auto conn : connections) {
-			outputPorts.insert(conn.first);
-			inputPorts.insert(conn.second);
+			sourcePorts.insert(conn.first);
 		}
 
-		for (auto port : outputPorts) {
+		// 2.设置输入/输出端口的缓冲区.
+		for (auto port : sourcePorts) {
 			auto sig = port.block->outputSignature(port.index);
-			m_outputBuffers[port] = std::shared_ptr<VecBuffer>(new VecBuffer(sig.type));
+			auto destPorts = m_parent->getDestPorts(port);
+			
+			// 确定缓冲区大小.
+			int count = std::max<int>(1, sig.count);
+			for (auto dest : destPorts) {
+				auto sig2 = dest.block->inputSignature(dest.index);
+				count = std::max<int>(count, sig2.count);
+			}
+			count = std::max<int>(count, 1024);
+
+			// 分配source端缓冲区.
+			std::shared_ptr<VecBuffer> buf(new VecBuffer(sig.type, count));
+			m_outputBuffers[port] = buf;
+
+			// 分配dest端缓冲区.
+			if (destPorts.size() == 1) {
+				m_inputBuffers[destPorts[0]] = buf;
+			}
+			else {
+				for (auto dest : destPorts) {
+					m_inputBuffers[port] = std::shared_ptr<VecBuffer>(new VecBuffer(sig.type, count));
+				}
+			}			
 		}
 
-		for (auto port : inputPorts) {
-			auto sig = port.block->inputSignature(port.index);
-			m_inputBuffers[port] = std::shared_ptr<VecBuffer>(new VecBuffer(sig.type));
-		}
+		return true;
 	}
 
 	bool BlockRuntime::compareBlock(Block * block1, Block * block2)
@@ -72,14 +110,7 @@ namespace oak {
 
 	std::vector<Block*> BlockRuntime::flatten()
 	{
-		// 检查状态是否变化.
-		auto connections = m_parent->connections();
-		if (m_connections == connections) {
-			return m_queue;
-		}
-		
 		// 根据连接关系，进行队列化（排序）
-		m_connections = connections;
 		m_queue.clear();
 
 		std::set<Block *> tempBlocks;
@@ -104,9 +135,6 @@ namespace oak {
 			}
 		}
 		
-		// 重新设置缓冲区.
-		resetBuffers();
-
 		return m_queue;
 	}
 
@@ -192,21 +220,23 @@ namespace oak {
 				continue;
 			}
 
-			// 计算转移数据量.
-			int transCount = source->inputCount();
-
-			auto destPorts = m_parent->getDestPorts(currPort);
-			std::vector<FifoBuffer *> buffers = getInputBuffers(destPorts);
-			for (auto buf : buffers) {
-				transCount = std::min<int>(transCount, buf->outputCount());
-			}
-			
 			// 转移数据.
-			if (transCount > 0) {
+			auto destPorts = m_parent->getDestPorts(currPort);
+			if (destPorts.size() > 1) {
+				// 计算转移数据量.
+				int transCount = source->inputCount();
+				std::vector<FifoBuffer *> buffers = getInputBuffers(destPorts);
 				for (auto buf : buffers) {
-					buf->push(source->inputData(), transCount);
+					transCount = std::min<int>(transCount, buf->outputCount());
 				}
-				source->pop(transCount);
+
+				// 转移数据.
+				if (transCount > 0) {
+					for (auto buf : buffers) {
+						buf->push(source->inputData(), transCount);
+					}
+					source->pop(transCount);
+				}
 			}
 		}
 	}

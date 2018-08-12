@@ -44,6 +44,8 @@ namespace oak {
 	public:
 		virtual int work();
 
+		bool validate();
+
 	private:
 		// 执行一个模块的操作.
 		int runBlock(Block * block);
@@ -62,7 +64,7 @@ namespace oak {
 		bool compareBlock(Block * block1, Block * block2);
 
 	public:
-		void resetBuffers();
+		bool setupBuffers();
 
 	private:
 		// 获取与输入端口相连接的缓冲区.

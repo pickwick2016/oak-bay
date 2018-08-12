@@ -1,5 +1,6 @@
 
 #include <algorithm>
+#include <assert.h>
 
 #include <oak/top_block.h>
 #include <oak/block_runtime.h>
@@ -143,7 +144,9 @@ namespace oak {
 
 	int TopBlock::work(vector_raw_data & inputs, vector_raw_data & outputs)
 	{
-		if (m_runtime) {
+		assert(m_runtime != nullptr);
+
+		if (m_runtime->validate()) {
 			int ret = m_runtime->work();
 			return ret;
 		}
@@ -154,6 +157,8 @@ namespace oak {
 	
 	int TopBlock::start() 
 	{
+		assert(m_runtime != nullptr);
+
 		return 0; 
 	}
 

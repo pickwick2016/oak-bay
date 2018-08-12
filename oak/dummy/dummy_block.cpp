@@ -25,15 +25,19 @@ namespace dummy {
 			return WorkResult::Wait;
 		}
 
+		float * output = (float *)(outputs[0].data);
+		for (int i = 0; i < count; i++) {
+			output[i] = m_currentCount + i;
+		}
 		outputs[0].count = count;
-		m_totalCount += count;
+		
+		m_currentCount += count;
 		
 		return WorkResult::Ok;
 	}
 
 	void DummySource::reset()
 	{
-		m_totalCount = 0;
 		m_currentCount = 0;
 	}
 
@@ -51,6 +55,11 @@ namespace dummy {
 			return WorkResult::Wait;
 		}
 
+		float * input = (float *)(inputs[0].data);
+		float * output = (float *)(outputs[0].data);
+		for (int i = 0; i < count; i++) {
+			output[i] = input[i];
+		}
 		inputs[0].count = count;
 		outputs[0].count = count;
 
@@ -60,7 +69,6 @@ namespace dummy {
 	DummySink::DummySink()
 	{
 		m_inputSigs = oak::SignatureList({ { oak::DataType::Real, true } });
-		m_count = 0;
 	}
 
 	int DummySink::work(vector_raw_data & inputs, vector_raw_data & outputs)
@@ -70,20 +78,23 @@ namespace dummy {
 			return WorkResult::Wait;
 		}
 
+		float * input = (float *)(inputs[0].data);
+		for (int i = 0; i < count; i++) {
+			m_buffer.push_back(input[i]);
+		}
 		inputs[0].count = count;
-		m_count += count;
 
 		return WorkResult::Ok;
 	}
 
 	void DummySink::reset()
 	{
-		m_count = 0;
+		m_buffer.clear();
 	}
 
 	int DummySink::count()
 	{
-		return m_count;
+		return m_buffer.size();
 	}
 
 } // namespace oak

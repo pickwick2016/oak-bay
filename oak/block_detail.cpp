@@ -13,29 +13,6 @@
 
 namespace oak {
 
-	DataType GetInputPortType(Port port)
-	{
-		if (port.block) {
-			auto sigs = port.block->inputSignatures();
-			if (port.index < sigs.size()) {
-				return sigs[port.index].type;
-			}
-		}
-
-		return DataType::Unknown;
-	}
-
-	DataType GetOutputPortType(Port port)
-	{
-		if (port.block) {
-			auto sigs = port.block->outputSignatures();
-			if (port.index < sigs.size()) {
-				return sigs[port.index].type;
-			}
-		}
-
-		return DataType::Unknown;
-	}
 
 	Port::Port(Block * block, unsigned int index)
 	{
@@ -61,6 +38,11 @@ namespace oak {
 		this->type = type;
 		this->need = need;
 		this->count = count;
+	}
+
+	bool Signature::isValid() const
+	{
+		return count >= 0 && type != DataType::Unknown;
 	}
 
 } // namespace oak

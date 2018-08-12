@@ -36,6 +36,10 @@ namespace oak {
 		virtual int work(vector_raw_data & inputs, vector_raw_data & outputs);
 
 	public:
+		int start();
+		void stop();
+
+	public:
 		// 添加模块(接管)
 		Block * add(Block * block);
 
@@ -64,24 +68,22 @@ namespace oak {
 		// 获取连接关系.
 		std::vector<std::pair<Port, Port>> connections() const;
 
-		// 接口是否匹配.
-		bool isMatch(Port source, Port dest);
-
 		// 获取连接.
 		std::vector<Port> getDestPorts(Port source);
 
+		// 获取连接.
 		Port getSourcePort(Port dest);
 
+		// 接口是否匹配.
+		bool isMatch(Port source, Port dest);
 
-	public:
-		int start();
-		void stop();
+
 
 	private:
-		std::vector<std::shared_ptr<Block>> m_blocks;
-		std::vector<std::pair<Port, Port>> m_connections;
+		std::vector<std::shared_ptr<Block>> m_blocks; // 模块.
+		std::vector<std::pair<Port, Port>> m_connections; // 连接关系.
 		
-		std::shared_ptr<BlockRuntime> m_runtime;
+		std::shared_ptr<BlockRuntime> m_runtime; // 运行环境.
 	};
 
 } // namespace oak

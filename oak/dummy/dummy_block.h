@@ -57,7 +57,7 @@ namespace dummy {
 		int count();
 
 	private:
-		int m_count;
+		std::vector<float> m_buffer;
 	};
 
 } // namespace dummy
