@@ -3,19 +3,19 @@
 #include <assert.h>
 
 #include <oak/combo_block.h>
-#include <oak/block_runtime2.h>
+#include <oak/block_runtime.h>
 
 namespace oak {
 
 
 	ComboBlock::ComboBlock()
 	{
-		m_runtime.reset(new BlockRuntime2(this));
+		m_runtime.reset(new BlockRuntime(this));
 	}
 
 	ComboBlock::ComboBlock(SignatureList inputSigs, SignatureList outputSigs)
 	{
-		m_runtime.reset(new BlockRuntime2(this));
+		m_runtime.reset(new BlockRuntime(this));
 
 		m_inputSigs = inputSigs;
 		m_outputSigs = outputSigs;
@@ -79,7 +79,7 @@ namespace oak {
 		// 删除模块.
 		auto fit = std::find_if(m_blocks.begin(), m_blocks.end(),
 			[=](auto & it) { return it.get() == block; });
-		m_blocks.erase(fit, m_blocks.end());
+		m_blocks.erase(fit);
 
 		// 删除相关连接.
 		auto rit = std::remove_if(m_connections.begin(), m_connections.end(),
@@ -133,7 +133,7 @@ namespace oak {
 	void ComboBlock::disconnect(Port source, Port dest)
 	{
 		if (contain(source, dest)) {
-			auto fit = std::find_if(m_connections.begin(), m_connections.end(),
+			auto fit = std::remove_if(m_connections.begin(), m_connections.end(),
 				[=](auto & it) { return (it.first == source) && (it.second == dest); });
 
 			m_connections.erase(fit, m_connections.end());
@@ -297,6 +297,11 @@ namespace oak {
 		}
 
 		return Port();
+	}
+
+	unsigned int ComboBlock::count() const
+	{
+		return m_blocks.size();
 	}
 
 } // namespace oak

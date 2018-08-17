@@ -9,188 +9,16 @@ namespace oak {
 
 	TopBlock::TopBlock()
 	{
-		m_runtime.reset(new BlockRuntime(this));
 	}
 
 	TopBlock::~TopBlock()
 	{
-		m_runtime.reset();
 	}
 
-	Block * TopBlock::add(Block* block)
-	{
-		if (!contain(block)) {
-			if (block) {
-				m_blocks.push_back(std::shared_ptr<Block>(block));
-			}
-		}
-
-		return block;
-	}
-
-	void TopBlock::remove(Block* block)
-	{
-		// 删除模块.
-		auto fit = std::find_if(m_blocks.begin(), m_blocks.end(),
-			[=](auto & it) { return it.get() == block; });
-
-		if (fit != m_blocks.end()) {
-			m_blocks.erase(fit);
-		}
-
-		// TODO:删除相关连接.
-		auto rit = std::remove_if(m_connections.begin(), m_connections.end(),
-			[=](auto & it) { return (it.first == block) || (it.second == block); });
-
-		m_connections.erase(rit, m_connections.end());
-	}
-
-	bool TopBlock::contain(Block* block)
-	{
-		auto fit = std::find_if(m_blocks.begin(), m_blocks.end(),
-			[=](auto & it) { return it.get() == block; });
-
-		bool find = (fit != m_blocks.end());
-		return find;
-	}
-
-	unsigned int TopBlock::count() const
-	{
-		return m_blocks.size();
-	}
-
-	std::vector<Block *> TopBlock::blocks()
-	{
-		std::vector<Block *> blocks;
-		for (auto & block : m_blocks) {
-			blocks.push_back(block.get());
-		}
-
-		return blocks;
-	}
-
-	bool TopBlock::checkConnect(Port source, Port dest)
-	{
-		if (!source.block || !dest.block) {
-			return false;
-		}
-
-		auto sourceSig = source.block->outputSignature(source.index);
-		auto destSig = dest.block->inputSignature(dest.index);
-
-		bool match = (sourceSig.type != DataType::Unknown)
-			&& (sourceSig.type == destSig.type);
-
-		return match;
-	}
-
-	bool TopBlock::connect(Port source, Port dest)
-	{
-		bool noBlocks = !contain(source.block) || !contain(dest.block);
-		bool sameBlock = (source.block == dest.block);
-
-		if (noBlocks || sameBlock) {
-			return false;
-		}
-
-		if (contain(source, dest)) {
-			return true;
-		}
-
-		bool match = checkConnect(source, dest);
-		if (match) {
-			m_connections.push_back({ source, dest });
-		}
-
-		return match;
-	}
-
-	void TopBlock::disconnect(Port source, Port dest)
-	{
-		if (contain(source, dest)) {
-			auto fit = std::find_if(m_connections.begin(), m_connections.end(),
-				[=](auto & it) { return (it.first == source) && (it.second == dest); });
-
-			if (fit != m_connections.end()) {
-				m_connections.erase(fit);
-			}
-		}
-	}
-
-
-	bool TopBlock::contain(Port source, Port dest)
-	{
-		for (auto conn : m_connections) {
-			if (conn.first == source && conn.second == dest) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	std::vector<std::pair<Port, Port>> TopBlock::connections() const
-	{
-		return m_connections;
-	}
-
-	int TopBlock::work(vector_raw_data * inputs, vector_raw_data * outputs)
-	{
-		assert(m_runtime != nullptr);
-
-		if (m_runtime->validate()) {
-			int ret = m_runtime->work();
-			return ret;
-		}
-
-		return WorkResult::Error;
-	}
-
-	void TopBlock::reset()
-	{
-		assert(m_runtime != nullptr);
-
-		m_runtime->reset();
-	}
-
-	bool TopBlock::checkGraph()
-	{
-		// 检查连接关系是否匹配.
-		for (auto & conn : m_connections) {
-			if (!checkConnect(conn.first, conn.second)) {
-				return false;
-			}
-		}
-
-		// 检查必要连接是否连接上.
-		for (auto & block : m_blocks) {
-			auto inSigs = block->inputSignatures();
-			for (unsigned int i = 0; i < inSigs.size(); i++) {
-				auto fid = std::find_if(m_connections.begin(), m_connections.end(),
-					[=](auto & it) { return it.second == Port(block.get(), i); });
-
-				if (inSigs[i].need && fid == m_connections.end()) {
-					return false;
-				}
-			}
-
-			auto outSigs = block->outputSignatures();
-			for (unsigned int i = 0; i < outSigs.size(); i++) {
-				auto fid = std::find_if(m_connections.begin(), m_connections.end(),
-					[=](auto & it) { return it.first == Port(block.get(), i); });
-
-				if (outSigs[i].need && fid == m_connections.end()) {
-					return false;
-				}
-			}
-		}
-
-		return true;
-	}
+	
 
 	int TopBlock::start()
 	{
-		assert(m_runtime != nullptr);
 		reset();
 
 		int ret = WorkResult::Error;
@@ -207,28 +35,6 @@ namespace oak {
 	void TopBlock::stop()
 	{
 	}
-
-	std::vector<Port> TopBlock::getDestPorts(Port source)
-	{
-		std::vector<Port> ret;
-		for (auto conn : m_connections) {
-			if (conn.first == source) {
-				ret.push_back(conn.second);
-			}
-		}
-
-		return ret;
-	}
-
-	Port TopBlock::getSourcePort(Port dest)
-	{
-		for (auto conn : m_connections) {
-			if (conn.second == dest) {
-				return conn.first;
-			}
-		}
-
-		return Port(nullptr, 0);
-	}
+	
 
 } // namespace oak

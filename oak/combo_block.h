@@ -8,7 +8,7 @@
 
 namespace oak {
 
-	class BlockRuntime2;
+	class BlockRuntime;
 
 	// 复合模块.
 	class ComboBlock : public Block
@@ -43,6 +43,9 @@ namespace oak {
 
 		// 所有包含的模块.
 		std::vector<Block *> blocks() const;
+
+		// 所包含的模块数量.
+		unsigned int count() const;
 
 	public:
 		// 连接模块.
@@ -85,7 +88,7 @@ namespace oak {
 		std::vector<std::shared_ptr<Block>> m_blocks; // 模块.
 		std::vector<std::pair<Port, Port>> m_connections; // 连接关系.
 
-		std::shared_ptr<BlockRuntime2> m_runtime;
+		std::shared_ptr<BlockRuntime> m_runtime;
 
 	};
 

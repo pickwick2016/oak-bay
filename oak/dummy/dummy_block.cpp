@@ -100,7 +100,7 @@ namespace dummy {
 		}
 		
 		std::vector<float *> data(m_ports);
-		for (int i = 0; i < m_ports; i++) {
+		for (unsigned int i = 0; i < m_ports; i++) {
 			data[i] = GetRawData<float>(inputs, i);
 		}
 

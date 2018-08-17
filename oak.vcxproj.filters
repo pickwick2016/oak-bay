@@ -39,9 +39,6 @@
     <ClInclude Include="oak\buffer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="oak\block_runtime.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="oak\tool\math.h">
       <Filter>tool</Filter>
     </ClInclude>
@@ -51,7 +48,7 @@
     <ClInclude Include="oak\tool\std_ext.h">
       <Filter>tool</Filter>
     </ClInclude>
-    <ClInclude Include="oak\block_runtime2.h">
+    <ClInclude Include="oak\block_runtime.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -74,16 +71,13 @@
     <ClCompile Include="oak\buffer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="oak\block_runtime.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="oak\tool\math.cpp">
       <Filter>tool</Filter>
     </ClCompile>
     <ClCompile Include="oak\combo_block.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="oak\block_runtime2.cpp">
+    <ClCompile Include="oak\block_runtime.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

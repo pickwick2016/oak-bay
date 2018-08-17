@@ -113,7 +113,7 @@ namespace oak {
 
 		bool init = false;
 		int ret = 0;
-		for (int i = 0; i < data->size(); i++) {
+		for (unsigned int i = 0; i < data->size(); i++) {
 			RawData raw = (*data)[i];
 			if (raw.data != nullptr && raw.count >= 0) {
 				ret = init ? std::min<int>(ret, raw.count) : raw.count;
@@ -131,7 +131,7 @@ namespace oak {
 			return -1;
 		}
 
-		for (int i = 0; i < data->size(); i++) {
+		for (unsigned int i = 0; i < data->size(); i++) {
 			RawData & raw = (*data)[i];
 			if (raw.data != nullptr) {
 				raw.count = count;

@@ -1,203 +1,209 @@
-#include <algorithm>
-#include <set>
-#include <iterator>
 #include <assert.h>
-
-#include <boost/bind.hpp>
+#include <algorithm>
 
 #include <oak/block_runtime.h>
+#include <oak/combo_block.h>
 #include <oak/buffer.h>
-#include <oak/top_block.h>
 #include <oak/tool/math.h>
 
 namespace oak {
 
-	BlockRuntime::BlockRuntime(TopBlock * parent, unsigned int countHint)
+	BlockRuntime::BlockRuntime(ComboBlock * parent, unsigned int countHint)
 		: m_parent(parent)
 	{
-		m_bufferCountHint = std::max<int>(1, countHint);
+		assert(m_parent);
+
+		m_bufferCountHint = std::max<unsigned int>(1, countHint);
+
 	}
 
 	BlockRuntime::~BlockRuntime()
 	{
-		m_inputBuffers.clear();
-		m_outputBuffers.clear();
-	}
-
-	void BlockRuntime::reset()
-	{
-		m_queue.clear();
-		m_connections.clear();
-		
-		validate();
 	}
 
 
-	bool BlockRuntime::validate()
+	int BlockRuntime::work(vector_raw_data * inputs, vector_raw_data * outputs)
 	{
 		assert(m_parent);
 
-		// 检查状态是否变化.
-		auto connections = m_parent->connections();
-		if (m_connections == connections) {
-			return ! m_queue.empty();
+		// 检查运行状态和环境是否准备妥当.
+		if (!validate()) {
+			return WorkResult::Error;
 		}
 
-		if (m_parent->checkGraph()) {
-			m_connections = connections;
-
-			auto blocks = flatten();
-			if (! blocks.empty()) {
-				// 重新设置缓冲区.
-				setupBuffers();
-				return true;
+		// 处理输入.
+		if (inputs) {
+			auto inputSigs = m_parent->inputSignatures();
+			for (unsigned int i = 0; i < inputSigs.size(); i++) {
+				int inputCount = (*inputs)[i].count;
+				void * inputData = (*inputs)[i].data;
+				FifoBuffer * buffer = getOutputBuffer({m_parent, i});
+			
+				if (buffer && inputData) {
+					int count = std::min<int>(inputCount, buffer->outputCount());
+				
+					buffer->push(inputData, inputCount);
+					(*inputs)[i].count = count;
+				}
+				else {
+					(*inputs)[i].count = 0;
+				}
 			}
+		}
+
+		// 依次处理所有模块.
+		std::vector<int> results(m_queue.size(), WorkResult::Error);
+		for (unsigned int i = 0; i < m_queue.size(); i ++) {
+			auto block = m_queue[i];
+
+			BlockState state;
+			if (!prepareBlock(block, state))
+				return WorkResult::Error;
+
+			results[i] = runBlock(block, state);
+
+			updateBlock(block, state);
+		}
+
+		int ret = MergeResults(results);
+
+		// 处理输出数据.
+		if (outputs) {
+			auto outputSigs = m_parent->outputSignatures();
+			for (unsigned int i = 0; i < outputSigs.size(); i++) {
+				int outputCount = (*outputs)[i].count;
+				void * outputData = (*outputs)[i].data;
+				FifoBuffer * buffer = getInputBuffer({ m_parent, i });
+
+				if (buffer && outputData) {
+					int count = std::min<int>(outputCount, buffer->inputCount());
+
+					buffer->pop(count, outputData);
+					(*outputs)[i].count = count;
+				}
+				else {
+					(*outputs)[i].count = 0;
+				}
+			}
+		}
+
+		return ret;
+	}
+	
+
+	FifoBuffer * BlockRuntime::getInputBuffer(Port port)
+	{
+		auto fit = m_inputBuffers.find(port);
+		if (fit != m_inputBuffers.end()) {
+			return m_inputBuffers[port].get();
+		}
+
+		return nullptr;
+	}
+
+	std::vector<FifoBuffer *> BlockRuntime::getInputBuffers(const std::vector<Port> & ports)
+	{
+		std::vector<FifoBuffer *> ret;
+		for (auto port : ports) {
+			auto buf = getInputBuffer(port);
+			ret.push_back(buf);
+		}
+
+		return ret;
+	}
+
+	FifoBuffer * BlockRuntime::getOutputBuffer(Port port)
+	{
+		auto fit = m_outputBuffers.find(port);
+		if (fit != m_outputBuffers.end()) {
+			return m_outputBuffers[port].get();
+		}
+
+		return nullptr;
+	}
+
+	bool BlockRuntime::isChanged()
+	{
+		auto connections = m_parent->connections();
+		if (m_connections != connections) {
+			m_connections = connections;
+			return true;
 		}
 
 		return false;
 	}
 
-	int BlockRuntime::work()
+	bool BlockRuntime::validate()
 	{
-		assert(!m_queue.empty());
-
-		std::vector<int> results(m_queue.size(), WorkResult::Error);
-		for (unsigned int i = 0; i < m_queue.size(); i++) {
-			results[i] = runBlock(m_queue[i]);
-			if (results[i] == WorkResult::Error) {
-				return WorkResult::Error;
-			}
+		if (isChanged()) {
+			reset();
 		}
 
-		int ret = MergeResults(results);
-		return ret;
+		return ! m_queue.empty();
 	}
 
-	bool BlockRuntime::setupBuffers()
+	void BlockRuntime::reset()
 	{
+		// 重建清理状态.
 		m_inputBuffers.clear();
 		m_outputBuffers.clear();
 
-		// 1.记录输入、输出端口.
-		std::set<Port> sourcePorts;
-		auto connections = m_parent->connections();
-		for (auto conn : connections) {
-			sourcePorts.insert(conn.first);
-		}
-
-		// 2.设置输入/输出端口的缓冲区.
-		for (auto port : sourcePorts) {
-			auto sig = port.block->outputSignature(port.index);
-			auto destPorts = m_parent->getDestPorts(port);
-			
-			// 确定缓冲区大小.
-			int bufferCount = std::max<int>(1, sig.count);
-			for (auto dest : destPorts) {
-				auto sig2 = dest.block->inputSignature(dest.index);
-				bufferCount = std::max<int>(bufferCount, sig2.count);
-			}
-
-			// 分配source端缓冲区.
-			std::shared_ptr<FifoBuffer> buf = makeBuffer(sig.type, bufferCount);
-			m_outputBuffers[port] = buf;
-
-			// 分配dest端缓冲区.
-			if (destPorts.size() == 1) {
-				m_inputBuffers[destPorts[0]] = buf;
-			}
-			else {
-				for (auto dest : destPorts) {
-					m_inputBuffers[dest] = makeBuffer(sig.type, bufferCount);
-				}
-			}			
-		}
-
-		return true;
-	}
-
-	std::vector<Block*> BlockRuntime::flatten()
-	{
-		// 根据连接关系，进行队列化（排序）
 		m_queue.clear();
 
-
-		for (auto conn : m_connections) {
-			auto fit1 = std::find(m_queue.begin(), m_queue.end(), conn.first.block);
-			auto fit2 = std::find(m_queue.begin(), m_queue.end(), conn.second.block);
-
-			if (fit1 != m_queue.end() && fit2 != m_queue.end()) {
-				if (std::distance(fit1, fit2) <= 0) {
-					m_queue.clear();
-					break;
-				}
-			}
-			else if (fit1 == m_queue.end() && fit2 == m_queue.end()) {
-				m_queue.push_back(conn.first.block);
-				m_queue.push_back(conn.second.block);
-			}
-			else if (fit1 != m_queue.end() && fit2 == m_queue.end()) {
-				m_queue.insert(fit1 + 1, conn.second.block);
-			}
-			else if (fit1 == m_queue.end() && fit2 != m_queue.end()) {
-				m_queue.insert(fit2, conn.first.block);
-			}
+		// 重建计算队列.
+		if (m_connections.empty()|| !m_parent->checkMap()) {
+			return;
 		}
 
-
-		//// 获取所有模块.
-		//std::set<Block *> tempBlocks;
-		//for (auto conn : m_connections) {
-		//	tempBlocks.insert(conn.first.block);
-		//	tempBlocks.insert(conn.second.block);
-		//}
-		//std::copy(tempBlocks.begin(), tempBlocks.end(), std::back_inserter(m_queue));
-
-		//// 排序.
-		//std::sort(m_queue.begin(), m_queue.end(), 
-		//	boost::bind(&BlockRuntime::compareBlock, this, _1, _2));
-
-		//// 检查排序结果是否错误.
-		//for (auto conn : m_connections) {
-		//	auto fit1 = std::find(m_queue.begin(), m_queue.end(), conn.first.block);
-		//	auto fit2 = std::find(m_queue.begin(), m_queue.end(), conn.second.block);
-
-		//	if (std::distance(fit1, fit2) <= 0) {
-		//		// 出现顺序不一致的情况
-		//		m_queue.clear();
-		//		break;
-		//	}
-		//}
+		m_queue = m_parent->flatten();
+		if (m_queue.empty()) {
+			return;
+		}
 		
-		return m_queue;
+		// 重建缓冲区.
+		for (auto conn : m_connections) {
+			auto sourceBlock = conn.first.block;
+			auto destBlock = conn.second.block;
+
+			DataType datatype = sourceBlock->outputSignature(conn.first.index).type;
+			auto endPorts = getEndPorts(conn.first);
+			assert(!endPorts.empty());
+
+			unsigned int count = 1024; // TODO: 调整大小.
+
+			auto outputBuf = makeBuffer(datatype, count);
+			m_outputBuffers[conn.first] = outputBuf;
+
+			if (endPorts.size() > 1) {
+				for (auto port : endPorts) {
+					auto inputBuf = makeBuffer(datatype, count);
+					m_inputBuffers[port] = inputBuf;
+				}
+			}
+			else {
+				m_inputBuffers[conn.second] = outputBuf;
+			}
+		}
 	}
 
-	bool IsSignatureMatchBuffer(SignatureList sigs, vector_raw_data data)
+	std::vector<Port> BlockRuntime::getEndPorts(Port start)
 	{
-		for (unsigned int i = 0; i < sigs.size(); i++) {
-			if (sigs[i].need == true) {
-				bool hasSlot = (data.size() > i);
-				if (!hasSlot || data[i].data == nullptr) {
-					return false;
-				}
+		std::vector<Port> ret;
+		for (auto conn : m_connections) {
+			if (conn.first == start) {
+				ret.push_back(conn.second);
 			}
 		}
 
-		return true;
+		return ret;
 	}
 
-	int BlockRuntime::runBlock(Block * block)
+	int BlockRuntime::runBlock(Block * block, BlockRuntime::BlockState & state)
 	{
-		BlockState state;
-		if (prepareBlock(block, state)) {
-			int ret = block->work(& state.inputs, & state.outputs);
-			updateBlock(block, state);
-			return ret;
-		}
-
-		return WorkResult::Error;
+		return block->work(&state.inputs, &state.outputs);
 	}
 
-	bool BlockRuntime::prepareBlock(Block * block, BlockRuntime::BlockState & state)
+	bool BlockRuntime::prepareBlock(Block * block, BlockState & state)
 	{
 		state.inputs.resize(block->inputSignatures().size());
 		for (unsigned int i = 0; i < state.inputs.size(); i++) {
@@ -212,7 +218,7 @@ namespace oak {
 				state.inputs[i].data = buffer->inputData();
 			}
 		}
-		
+
 		state.outputs.resize(block->outputSignatures().size());
 		for (unsigned int i = 0; i < state.outputs.size(); i++) {
 			auto sig = block->outputSignature(i);
@@ -230,7 +236,7 @@ namespace oak {
 		return true;
 	}
 
-	void BlockRuntime::updateBlock(Block * block, const BlockRuntime::BlockState & state)
+	void BlockRuntime::updateBlock(Block * block, const BlockState & state)
 	{
 		//1.根据处理结果，更新输入/输出缓冲区
 		for (unsigned int i = 0; i < state.inputs.size(); i++) {
@@ -244,7 +250,7 @@ namespace oak {
 				buffer->push(state.outputs[i].data, state.outputs[i].count);
 			}
 		}
-		
+
 		//2.模块缓冲区之间传递数据.
 		for (unsigned int i = 0; i < state.outputs.size(); i++) {
 			Port currPort(block, i);
@@ -254,7 +260,7 @@ namespace oak {
 			}
 
 			// 转移数据.
-			auto destPorts = m_parent->getDestPorts(currPort);
+			auto destPorts = m_parent->getEndPorts(currPort);
 			if (destPorts.size() > 1) {
 				// 计算转移数据量.
 				int transCount = source->inputCount();
@@ -274,38 +280,7 @@ namespace oak {
 		}
 	}
 
-	FifoBuffer * BlockRuntime::getInputBuffer(Port port)
-	{
-		auto fit = m_inputBuffers.find(port);
-		if (fit != m_inputBuffers.end()) {
-			return (*fit).second.get();
-		}
-
-		return nullptr;
-	}
-
-	FifoBuffer * BlockRuntime::getOutputBuffer(Port port)
-	{
-		auto fit = m_outputBuffers.find(port);
-		if (fit != m_outputBuffers.end()) {
-			return (*fit).second.get();
-		}
-
-		return nullptr;
-	}
-
-	std::vector<FifoBuffer *> BlockRuntime::getInputBuffers(const std::vector<Port> & ports)
-	{
-		std::vector<FifoBuffer *> ret;
-		for (auto port : ports) {
-			auto buf = getInputBuffer(port);
-			ret.push_back(buf);
-		}
-
-		return ret;
-	}
-
-	std::shared_ptr<FifoBuffer> BlockRuntime::makeBuffer(DataType datatype, int count)
+	std::shared_ptr<FifoBuffer> BlockRuntime::makeBuffer(DataType datatype, unsigned int count)
 	{
 		int bufferCount = std::max<int>(1, count);
 		bufferCount = RoundUp(bufferCount, m_bufferCountHint);
