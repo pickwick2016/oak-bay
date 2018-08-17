@@ -116,4 +116,9 @@ namespace oak {
 		return popCount;
 	}
 
+	void VecBuffer::clear()
+	{
+		m_dataCount = 0;
+	}
+
 } // namespace oak

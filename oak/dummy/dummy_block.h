@@ -23,7 +23,7 @@ namespace dummy {
 		DummySource(int count = 1024);
 
 	public:
-		virtual int work(vector_raw_data & inputs, vector_raw_data & outputs);
+		virtual int work(vector_raw_data * inputs, vector_raw_data * outputs);
 		virtual void reset();
 
 	private:
@@ -37,7 +37,7 @@ namespace dummy {
 		DummyBlock();
 
 	public:
-		virtual int work(vector_raw_data & inputs, vector_raw_data & outputs);
+		virtual int work(vector_raw_data * inputs, vector_raw_data * outputs);
 	};
 
 	/**
@@ -47,10 +47,10 @@ namespace dummy {
 	class DummySink : public oak::Block
 	{
 	public:
-		DummySink();
+		DummySink(unsigned int ports = 1);
 
 	public:
-		virtual int work(vector_raw_data & inputs, vector_raw_data & outputs);
+		virtual int work(vector_raw_data * inputs, vector_raw_data * outputs);
 		virtual void reset();
 
 	public:
@@ -58,6 +58,7 @@ namespace dummy {
 
 	private:
 		std::vector<float> m_buffer;
+		unsigned int m_ports;
 	};
 
 } // namespace dummy

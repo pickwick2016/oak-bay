@@ -39,11 +39,17 @@ namespace oak {
 		};
 
 	public:
-		BlockRuntime(TopBlock * parent = nullptr);
+		BlockRuntime(TopBlock * parent = nullptr, unsigned int countHint = 1024);
+		~BlockRuntime();
 
 	public:
+		// 执行一步工作.
 		virtual int work();
 
+		// 重置状态.
+		void reset();
+
+		// 验证状态是否可用.
 		bool validate();
 
 	private:
@@ -52,18 +58,14 @@ namespace oak {
 		
 		// 为模块准备上下文环境.
 		bool prepareBlock(Block * block, BlockState & state);
-
-		// 检查模块.
-		bool checkBlock(Block * block, const BlockState & state);
-
+		
 		// 执行完后更新状态.
 		void updateBlock(Block * block, const BlockState & state);
 
-	public:
+		// 将模块图扁平化（队列化）
 		std::vector<Block*> flatten();
-		bool compareBlock(Block * block1, Block * block2);
 
-	public:
+		// (重新)设置缓冲区.
 		bool setupBuffers();
 
 	private:
@@ -75,15 +77,19 @@ namespace oak {
 
 		// 获取与输出端口相连接的缓冲区. 
 		std::vector<FifoBuffer *> getInputBuffers(const std::vector<Port> & ports);
+
+		std::shared_ptr<FifoBuffer> makeBuffer(DataType datatype, int count);
 				
 	private:
-		std::map<Port, std::shared_ptr<VecBuffer>> m_inputBuffers;
-		std::map<Port, std::shared_ptr<VecBuffer>> m_outputBuffers;
+		std::map<Port, std::shared_ptr<FifoBuffer>> m_inputBuffers;
+		std::map<Port, std::shared_ptr<FifoBuffer>> m_outputBuffers;
 
 		TopBlock * m_parent;
 
 		std::vector<std::pair<Port, Port>> m_connections;
 		std::vector<Block *> m_queue;
+
+		unsigned int m_bufferCountHint;
 	};
 
 } // namespace oak

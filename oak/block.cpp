@@ -9,10 +9,16 @@
  */
 
 #include <oak/block.h>
+#include <oak/tool/std_ext.h>
 
 namespace oak {
 
 	Block::Block()
+	{
+	}
+
+	Block::Block(SignatureList inputSigs, SignatureList outputSigs)
+		: m_inputSigs(inputSigs), m_outputSigs(outputSigs)
 	{
 	}
 
@@ -29,24 +35,48 @@ namespace oak {
 	{
 		return m_outputSigs;
 	}
-
-
+	
 	Signature Block::inputSignature(unsigned int index)
 	{
-		if (index < m_inputSigs.size()) {
-			return m_inputSigs[index];
-		}
-
-		return Signature(DataType::Unknown, false, -1);
+		return vector_get(
+			inputSignatures(), index, Signature(DataType::Unknown, false, -1));
 	}
 
 	Signature Block::outputSignature(unsigned int index)
 	{
-		if (index < m_outputSigs.size()) {
-			return m_outputSigs[index];
+		return vector_get(
+			outputSignatures(), index, Signature(DataType::Unknown, false, -1));
+	}
+
+	bool IsSigMatchData(const SignatureList & sigs, vector_raw_data * data)
+	{
+		// 提供数据数量不许比签名多.
+		if (data && (data->size() > sigs.size())) {
+			return false;
 		}
 
-		return Signature(DataType::Unknown, false, -1);
+		// 根据签名，依次检查数据是否匹配.
+		for (unsigned int i = 0; i < sigs.size(); i ++) {
+			auto sig = sigs[i];
+			RawData raw;
+			if (data != nullptr) {
+				raw = vector_get<RawData>(*data, i, RawData());
+			}
+				
+			if (sig.need && raw.data == nullptr) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool Block::check(vector_raw_data * inputs, vector_raw_data * outputs)
+	{
+		bool inputMatch = IsSigMatchData(m_inputSigs, inputs);
+		bool outputMatch = IsSigMatchData(m_outputSigs, outputs);
+
+		return inputMatch && outputMatch;
 	}
 
 } // namespace oak

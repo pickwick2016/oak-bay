@@ -33,7 +33,10 @@ namespace oak {
 		virtual ~TopBlock();
 
 	public:
-		virtual int work(vector_raw_data & inputs, vector_raw_data & outputs);
+		// 重载 Block
+
+		virtual int work(vector_raw_data * inputs, vector_raw_data * outputs);
+		virtual void reset();
 
 	public:
 		int start();
@@ -74,11 +77,12 @@ namespace oak {
 		// 获取连接.
 		Port getSourcePort(Port dest);
 
+		// 检查连接图是否完整.
+		bool checkGraph();
+
 		// 接口是否匹配.
-		bool isMatch(Port source, Port dest);
-
-
-
+		bool checkConnect(Port source, Port dest);
+		
 	private:
 		std::vector<std::shared_ptr<Block>> m_blocks; // 模块.
 		std::vector<std::pair<Port, Port>> m_connections; // 连接关系.

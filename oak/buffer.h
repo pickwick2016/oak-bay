@@ -51,6 +51,9 @@ namespace oak {
 
 		// 弹出数据.
 		virtual int pop(int count, void * data = nullptr) = 0;
+
+		// 重置(其他设置不变，清空内容).
+		virtual void clear() = 0;
 	};
 
 
@@ -84,6 +87,9 @@ namespace oak {
 		
 		// 弹出数据.
 		virtual int pop(int count, void * data = nullptr);
+
+		// 重置内容.
+		virtual void clear();
 
 	private:
 		unsigned int m_elementSize;

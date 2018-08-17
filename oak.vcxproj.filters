@@ -16,6 +16,9 @@
     <Filter Include="dummy">
       <UniqueIdentifier>{80016ec3-580d-4760-90ea-21ed4eb012c5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="tool">
+      <UniqueIdentifier>{da5f3d97-5421-4071-83b3-002917c84eba}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="oak\block.h">
@@ -39,6 +42,18 @@
     <ClInclude Include="oak\block_runtime.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="oak\tool\math.h">
+      <Filter>tool</Filter>
+    </ClInclude>
+    <ClInclude Include="oak\combo_block.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="oak\tool\std_ext.h">
+      <Filter>tool</Filter>
+    </ClInclude>
+    <ClInclude Include="oak\block_runtime2.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="oak\block.cpp">
@@ -60,6 +75,15 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="oak\block_runtime.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="oak\tool\math.cpp">
+      <Filter>tool</Filter>
+    </ClCompile>
+    <ClCompile Include="oak\combo_block.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="oak\block_runtime2.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

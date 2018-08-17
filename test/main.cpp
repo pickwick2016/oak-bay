@@ -12,4 +12,6 @@
 #include <boost/test/included/unit_test.hpp>
 
 #include <test/oak_buffer_test.h>
+#include <test/dummy_block_test.h>
+#include <test/combo_block_test.h>
 #include <test/oak_top_block_test.h>

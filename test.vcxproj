@@ -122,6 +122,8 @@
     <ClCompile Include="test\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="test\combo_block_test.h" />
+    <ClInclude Include="test\dummy_block_test.h" />
     <ClInclude Include="test\oak_buffer_test.h" />
     <ClInclude Include="test\oak_top_block_test.h" />
   </ItemGroup>

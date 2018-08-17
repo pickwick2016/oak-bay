@@ -13,26 +13,32 @@ namespace dummy {
 		m_totalCount = std::max<int>(count, 1);
 	}
 
-	int DummySource::work(vector_raw_data & inputs, vector_raw_data & outputs)
+	int DummySource::work(vector_raw_data * inputs, vector_raw_data * outputs)
 	{
+		if (!check(inputs, outputs)) {
+			return WorkResult::Error;
+		}
+
 		int remainCount = m_totalCount - m_currentCount;
 		if (remainCount <= 0) {
+			SetRawDataCount(outputs, 0, 0);
 			return WorkResult::Finish;
 		}
 
-		int count = std::min<int>(outputs[0].count, remainCount);
+		int count = std::min<int>(GetRawDataCount(outputs, 0), remainCount);
 		if (count <= 0) {
+			SetRawDataCount(outputs, 0, 0);
 			return WorkResult::Wait;
 		}
 
-		float * output = (float *)(outputs[0].data);
+		float * output = GetRawData<float>(outputs, 0);
 		for (int i = 0; i < count; i++) {
 			output[i] = m_currentCount + i;
 		}
-		outputs[0].count = count;
-		
+
 		m_currentCount += count;
-		
+
+		SetRawDataCount(outputs, 0, count);
 		return WorkResult::Ok;
 	}
 
@@ -48,42 +54,63 @@ namespace dummy {
 	}
 
 
-	int DummyBlock::work(vector_raw_data & inputs, vector_raw_data & outputs)
+	int DummyBlock::work(vector_raw_data * inputs, vector_raw_data * outputs)
 	{
-		int count = std::min<int>(inputs[0].count, outputs[0].count);
+		if (!check(inputs, outputs)) {
+			return WorkResult::Error;
+		}
+
+		int count = std::min<int>(GetRawDataCount(inputs, 0), GetRawDataCount(outputs, 0));
 		if (count <= 0) {
+			SetRawDataCount(inputs, 0, 0);
+			SetRawDataCount(outputs, 0, 0);
 			return WorkResult::Wait;
 		}
 
-		float * input = (float *)(inputs[0].data);
-		float * output = (float *)(outputs[0].data);
+		float * input = GetRawData<float>(inputs, 0);
+		float * output = GetRawData<float>(outputs, 0);
+
 		for (int i = 0; i < count; i++) {
 			output[i] = input[i];
 		}
-		inputs[0].count = count;
-		outputs[0].count = count;
+
+		SetRawDataCount(inputs, 0, count);
+		SetRawDataCount(outputs, 0, count);
 
 		return WorkResult::Ok;
 	}
 	
-	DummySink::DummySink()
+	DummySink::DummySink(unsigned int port)
 	{
-		m_inputSigs = oak::SignatureList({ { oak::DataType::Real, true } });
+		m_ports = std::max<int>(1, port);
+
+		m_inputSigs = oak::SignatureList(m_ports, { oak::DataType::Real, true });
 	}
 
-	int DummySink::work(vector_raw_data & inputs, vector_raw_data & outputs)
+	int DummySink::work(vector_raw_data * inputs, vector_raw_data * outputs)
 	{
-		int count = inputs[0].count;
+		if (!check(inputs, outputs)) {
+			return WorkResult::Error;
+		}
+
+		int count = GetRawDataMinCount(inputs);
 		if (count <= 0) {
+			SetRawDataCount(inputs, 0);
 			return WorkResult::Wait;
 		}
-
-		float * input = (float *)(inputs[0].data);
-		for (int i = 0; i < count; i++) {
-			m_buffer.push_back(input[i]);
+		
+		std::vector<float *> data(m_ports);
+		for (int i = 0; i < m_ports; i++) {
+			data[i] = GetRawData<float>(inputs, i);
 		}
-		inputs[0].count = count;
 
+		for (int i = 0; i < count; i++) {
+			for (unsigned int j = 0; j < m_ports; j++) {
+				m_buffer.push_back(data[j][i]);
+			}
+		}
+
+		SetRawDataCount(inputs, count);
 		return WorkResult::Ok;
 	}
 

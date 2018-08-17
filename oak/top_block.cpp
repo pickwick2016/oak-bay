@@ -7,7 +7,7 @@
 
 namespace oak {
 
-	TopBlock::TopBlock() 
+	TopBlock::TopBlock()
 	{
 		m_runtime.reset(new BlockRuntime(this));
 	}
@@ -17,9 +17,9 @@ namespace oak {
 		m_runtime.reset();
 	}
 
-	Block * TopBlock::add(Block* block) 
+	Block * TopBlock::add(Block* block)
 	{
-		if (! contain(block)) {
+		if (!contain(block)) {
 			if (block) {
 				m_blocks.push_back(std::shared_ptr<Block>(block));
 			}
@@ -28,7 +28,7 @@ namespace oak {
 		return block;
 	}
 
-	void TopBlock::remove(Block* block) 
+	void TopBlock::remove(Block* block)
 	{
 		// 删除模块.
 		auto fit = std::find_if(m_blocks.begin(), m_blocks.end(),
@@ -45,7 +45,7 @@ namespace oak {
 		m_connections.erase(rit, m_connections.end());
 	}
 
-	bool TopBlock::contain(Block* block) 
+	bool TopBlock::contain(Block* block)
 	{
 		auto fit = std::find_if(m_blocks.begin(), m_blocks.end(),
 			[=](auto & it) { return it.get() == block; });
@@ -68,26 +68,18 @@ namespace oak {
 
 		return blocks;
 	}
-	
-	bool TopBlock::isMatch(Port source, Port dest)
+
+	bool TopBlock::checkConnect(Port source, Port dest)
 	{
 		if (!source.block || !dest.block) {
 			return false;
 		}
 
-		bool match = false;
+		auto sourceSig = source.block->outputSignature(source.index);
+		auto destSig = dest.block->inputSignature(dest.index);
 
-		auto fromSigs = source.block->outputSignatures();
-		unsigned int fromPort = source.index;
-
-		auto toSigs = dest.block->inputSignatures();
-		unsigned int toPort = dest.index;
-
-		if (fromPort < fromSigs.size() && toPort < toSigs.size()) {
-			if (fromSigs[fromPort].type == toSigs[toPort].type) {
-				match = true;
-			}
-		}
+		bool match = (sourceSig.type != DataType::Unknown)
+			&& (sourceSig.type == destSig.type);
 
 		return match;
 	}
@@ -96,7 +88,7 @@ namespace oak {
 	{
 		bool noBlocks = !contain(source.block) || !contain(dest.block);
 		bool sameBlock = (source.block == dest.block);
-		
+
 		if (noBlocks || sameBlock) {
 			return false;
 		}
@@ -104,8 +96,8 @@ namespace oak {
 		if (contain(source, dest)) {
 			return true;
 		}
-		
-		bool match = isMatch(source, dest);
+
+		bool match = checkConnect(source, dest);
 		if (match) {
 			m_connections.push_back({ source, dest });
 		}
@@ -118,7 +110,7 @@ namespace oak {
 		if (contain(source, dest)) {
 			auto fit = std::find_if(m_connections.begin(), m_connections.end(),
 				[=](auto & it) { return (it.first == source) && (it.second == dest); });
-			
+
 			if (fit != m_connections.end()) {
 				m_connections.erase(fit);
 			}
@@ -142,7 +134,7 @@ namespace oak {
 		return m_connections;
 	}
 
-	int TopBlock::work(vector_raw_data & inputs, vector_raw_data & outputs)
+	int TopBlock::work(vector_raw_data * inputs, vector_raw_data * outputs)
 	{
 		assert(m_runtime != nullptr);
 
@@ -150,16 +142,66 @@ namespace oak {
 			int ret = m_runtime->work();
 			return ret;
 		}
-		
+
 		return WorkResult::Error;
 	}
 
-	
-	int TopBlock::start() 
+	void TopBlock::reset()
 	{
 		assert(m_runtime != nullptr);
 
-		return 0; 
+		m_runtime->reset();
+	}
+
+	bool TopBlock::checkGraph()
+	{
+		// 检查连接关系是否匹配.
+		for (auto & conn : m_connections) {
+			if (!checkConnect(conn.first, conn.second)) {
+				return false;
+			}
+		}
+
+		// 检查必要连接是否连接上.
+		for (auto & block : m_blocks) {
+			auto inSigs = block->inputSignatures();
+			for (unsigned int i = 0; i < inSigs.size(); i++) {
+				auto fid = std::find_if(m_connections.begin(), m_connections.end(),
+					[=](auto & it) { return it.second == Port(block.get(), i); });
+
+				if (inSigs[i].need && fid == m_connections.end()) {
+					return false;
+				}
+			}
+
+			auto outSigs = block->outputSignatures();
+			for (unsigned int i = 0; i < outSigs.size(); i++) {
+				auto fid = std::find_if(m_connections.begin(), m_connections.end(),
+					[=](auto & it) { return it.first == Port(block.get(), i); });
+
+				if (outSigs[i].need && fid == m_connections.end()) {
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	int TopBlock::start()
+	{
+		assert(m_runtime != nullptr);
+		reset();
+
+		int ret = WorkResult::Error;
+		while (true) {
+			ret = work(nullptr, nullptr);
+			if (ret == WorkResult::Finish || ret == WorkResult::Error) {
+				break;
+			}
+		}
+
+		return ret;
 	}
 
 	void TopBlock::stop()

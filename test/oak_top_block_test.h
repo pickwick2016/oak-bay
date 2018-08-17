@@ -65,10 +65,9 @@ BOOST_AUTO_TEST_CASE(top_block_run)
 
 		top.connect(source, sink);
 
-		vector_raw_data temp1, temp2;
-		int ret = top.work(temp1, temp2);
+		int ret = top.work(nullptr, nullptr);
 		int count = sink->count();
-		BOOST_CHECK(count == 100);
+		BOOST_CHECK(count > 0);
 	}
 
 	{
@@ -80,12 +79,11 @@ BOOST_AUTO_TEST_CASE(top_block_run)
 
 		top.connect(source, sink);
 
-		vector_raw_data temp1, temp2;
-		int ret = top.work(temp1, temp2);
+		int ret = top.work(nullptr, nullptr);
 		int count = sink->count();
 		BOOST_CHECK(count > 0);
 	}
-	
+
 	{
 		TopBlock top;
 
@@ -97,8 +95,7 @@ BOOST_AUTO_TEST_CASE(top_block_run)
 		top.connect(source, block);
 		top.connect(block, sink);
 
-		vector_raw_data temp1, temp2;
-		int ret = top.work(temp1, temp2);
+		int ret = top.work(nullptr, nullptr);
 		int count = sink->count();
 		BOOST_CHECK(count > 0);
 	}
@@ -114,11 +111,60 @@ BOOST_AUTO_TEST_CASE(top_block_run)
 		top.connect(source, block);
 		top.connect(block, sink);
 
-		vector_raw_data temp1, temp2;
-		int ret = top.work(temp1, temp2);
+		int ret = top.work(nullptr, nullptr);
 		int count = sink->count();
-		BOOST_CHECK(count == 100);
+		BOOST_CHECK(count > 0);
 	}
 }
+
+BOOST_AUTO_TEST_CASE(top_block_run_2)
+{
+	using namespace oak;
+	using namespace dummy;
+	
+	{
+		TopBlock top;
+
+		auto source = top.add(new DummySource());
+		auto block_1 = top.add(new DummyBlock());
+		auto block_2 = top.add(new DummyBlock());
+		auto sink = dynamic_cast<DummySink *>(top.add(new DummySink(2)));
+		BOOST_TEST(sink != nullptr);
+
+		BOOST_CHECK(top.connect(source, block_1));
+		BOOST_CHECK(top.connect(source, block_2));
+		BOOST_CHECK(top.connect(block_1, { sink, 0 }));
+		BOOST_CHECK(top.connect(block_2, { sink, 1 }));
+
+		int ret = top.work(nullptr, nullptr);
+		BOOST_CHECK(ret == WorkResult::Ok);
+
+		int count = sink->count();
+		BOOST_CHECK(count > 0);
+	}
+
+	{
+		TopBlock top;
+
+		int sourceCount = 4000;
+		auto source = top.add(new DummySource(sourceCount));
+		auto block_1 = top.add(new DummyBlock());
+		auto block_2 = top.add(new DummyBlock());
+		auto sink = dynamic_cast<DummySink *>(top.add(new DummySink(2)));
+		BOOST_TEST(sink != nullptr);
+
+		BOOST_CHECK(top.connect(source, block_1));
+		BOOST_CHECK(top.connect(source, block_2));
+		BOOST_CHECK(top.connect(block_1, { sink, 0 }));
+		BOOST_CHECK(top.connect(block_2, { sink, 1 }));
+
+		int ret = top.start();
+		BOOST_CHECK(ret == WorkResult::Finish);
+
+		int count = sink->count();
+		BOOST_CHECK(count == sourceCount * 2);
+	}
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

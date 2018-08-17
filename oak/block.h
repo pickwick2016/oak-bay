@@ -22,6 +22,7 @@ namespace oak {
 	{
 	public:
 		Block();
+		Block(SignatureList inputSigs, SignatureList outputSigs);
 		virtual ~Block();
 
 	public:
@@ -31,19 +32,24 @@ namespace oak {
 		 * @param outputs 输出缓冲区.
 		 * @return 处理结果状态.
 		 */
-		virtual int work(vector_raw_data & inputs, vector_raw_data & outputs) = 0;
+		virtual int work(vector_raw_data * inputs, vector_raw_data * outputs) { return WorkResult::Error; }
 
 		// 重置模块状态.
 		virtual void reset() {}
 
 	public:
 		// 获取输入签名.
-		SignatureList inputSignatures();
+		virtual SignatureList inputSignatures();
 		Signature inputSignature(unsigned int index);
 
 		// 获取输出签名.
-		SignatureList outputSignatures();
+		virtual SignatureList outputSignatures();
 		Signature outputSignature(unsigned int index);
+
+	protected:
+
+		// 检查输入输出数据是否与签名相匹配.
+		bool check(vector_raw_data * inputs, vector_raw_data * outputs);
 
 	protected:
 		SignatureList m_inputSigs, m_outputSigs;
