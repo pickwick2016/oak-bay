@@ -16,6 +16,12 @@
 
 namespace oak {
 
+
+	Signature Signature::InvalidSigature()
+	{
+		return Signature(DataType::Unknown, true, 0);
+	}
+
 	int MergeResults(const std::vector<int> & results)
 	{
 		if (results.empty()) {
@@ -70,7 +76,7 @@ namespace oak {
 
 	bool Signature::isValid() const
 	{
-		return count >= 0 && type != DataType::Unknown;
+		return ! (count < 0 && type == DataType::Unknown);
 	}
 
 	int GetRawDataCount(vector_raw_data & data, unsigned int index)

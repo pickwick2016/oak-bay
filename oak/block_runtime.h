@@ -21,7 +21,7 @@ namespace oak {
 		};
 
 	public:
-		BlockRuntime(ComboBlock * parent = nullptr, unsigned int countHint = 1024);
+		BlockRuntime(ComboBlock * parent, unsigned int countHint = 1024);
 		~BlockRuntime();
 
 	public:
@@ -56,6 +56,8 @@ namespace oak {
 		std::vector<FifoBuffer *> getInputBuffers(const std::vector<Port> & ports);
 
 		std::vector<Port> getEndPorts(Port start);
+
+		unsigned int calculateSize(Port start, std::vector<Port> ends);
 
 	private:
 		ComboBlock * m_parent;

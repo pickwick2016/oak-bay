@@ -13,6 +13,8 @@ namespace oak {
 	// 复合模块.
 	class ComboBlock : public Block
 	{
+		friend class BlockRuntime;
+
 	public:
 		ComboBlock();
 		ComboBlock(SignatureList inputSigs, SignatureList outputSigs);
@@ -81,8 +83,9 @@ namespace oak {
 		// 将流程图队列化（扁平）.
 		std::vector<Block *> flatten();
 
-	private:
-		std::shared_ptr<Block> makePlackholder(Block * block);
+	protected:
+		// 制造用于接口签名检查的替身.
+		std::shared_ptr<Block> makeSubstitute(Block * block);
 
 	private:
 		std::vector<std::shared_ptr<Block>> m_blocks; // 模块.

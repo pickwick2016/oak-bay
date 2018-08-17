@@ -50,7 +50,7 @@ namespace oak {
 			block->reset();
 		}
 
-		//TODO: 运行环境重置.
+		//运行环境重置.
 		m_runtime->reset();
 	}
 
@@ -146,14 +146,14 @@ namespace oak {
 			return false;
 		}
 
-		auto sourceBlock = makePlackholder(source.block);
-		auto destBlock = makePlackholder(dest.block);
+		auto sourceBlock = makeSubstitute(source.block);
+		auto destBlock = makeSubstitute(dest.block);
 
 		auto sourceSig = sourceBlock->outputSignature(source.index);
 		auto destSig = destBlock->inputSignature(dest.index);
 
-		bool match = (sourceSig.type != DataType::Unknown)
-			&& (sourceSig.type == destSig.type);
+		bool match = sourceSig.isValid() && destSig.isValid()
+			&& sourceSig.type == destSig.type;
 
 		return match;
 	}
@@ -192,9 +192,8 @@ namespace oak {
 
 		// 针对每个模块（不含自身），检查必要连接是否连接上.
 		for (auto & block : blocks) {
-			auto tempBlock = makePlackholder(block);
+			auto tempBlock = makeSubstitute(block);
 
-			//auto inSigs = (block != this) ? block->inputSignatures() : block->outputSignatures();
 			auto inSigs = tempBlock->inputSignatures();
 			for (unsigned int i = 0; i < inSigs.size(); i++) {
 				auto fid = std::find_if(m_connections.begin(), m_connections.end(),
@@ -205,7 +204,6 @@ namespace oak {
 				}
 			}
 
-			//auto outSigs = (block != this) ? block->outputSignatures() : block->inputSignatures();
 			auto outSigs = tempBlock->outputSignatures();
 			for (unsigned int i = 0; i < outSigs.size(); i++) {
 				auto fid = std::find_if(m_connections.begin(), m_connections.end(),
@@ -217,16 +215,10 @@ namespace oak {
 			}
 		}
 
-		// 检查自身模块是否连接.
-		for (unsigned int i = 0; i < inputSignatures().size(); i++) {
-			auto sig = inputSignature(i);
-
-		}
-
 		return true;
 	}
 
-	std::shared_ptr<Block> ComboBlock::makePlackholder(Block * block)
+	std::shared_ptr<Block> ComboBlock::makeSubstitute(Block * block)
 	{
 		assert(block != nullptr);
 

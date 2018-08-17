@@ -53,12 +53,19 @@ namespace oak {
 	public:
 		Signature(DataType type, bool need = true, int count = 1);
 
+		/** 判断签名是否有效.
+		 * 端口不存在的情况下，会产生无效签名.
+		 */
 		bool isValid() const;
 
 	public:
 		DataType type;	// 数据类型
 		bool need;	// 是否必需
 		int count;	// 最小数据数量.
+
+	public:
+		// 构造无效签名.
+		static Signature InvalidSigature(); 
 	};
 
 	// 端口签名列表.

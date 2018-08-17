@@ -160,16 +160,20 @@ namespace oak {
 			return;
 		}
 		
-		// 重建缓冲区.
+		// 重建缓冲区（以connections关系为索引）.
 		for (auto conn : m_connections) {
 			auto sourceBlock = conn.first.block;
 			auto destBlock = conn.second.block;
 
-			DataType datatype = sourceBlock->outputSignature(conn.first.index).type;
+			auto sig = sourceBlock->outputSignature(conn.first.index);
+			assert(sig.isValid());
+
+			DataType datatype = sig.type;
+
 			auto endPorts = getEndPorts(conn.first);
 			assert(!endPorts.empty());
 
-			unsigned int count = 1024; // TODO: 调整大小.
+			unsigned int count = calculateSize(conn.first, endPorts); 
 
 			auto outputBuf = makeBuffer(datatype, count);
 			m_outputBuffers[conn.first] = outputBuf;
@@ -184,6 +188,26 @@ namespace oak {
 				m_inputBuffers[conn.second] = outputBuf;
 			}
 		}
+	}
+
+	unsigned int BlockRuntime::calculateSize(Port start, std::vector<Port> ends)
+	{
+		assert(m_parent);
+
+		unsigned int count = m_bufferCountHint;
+		for (auto & port : ends) {
+			auto block = m_parent->makeSubstitute(port.block);
+			auto sig = block->inputSignature(port.index);
+			count = std::max<int>(count, sig.count);
+		}
+
+		auto block = m_parent->makeSubstitute(start.block);
+		auto sig = block->outputSignature(start.index);
+		count = std::max<int>(count, sig.count);
+
+		count = RoundUp(count, 1024);
+
+		return count;
 	}
 
 	std::vector<Port> BlockRuntime::getEndPorts(Port start)
@@ -208,6 +232,8 @@ namespace oak {
 		state.inputs.resize(block->inputSignatures().size());
 		for (unsigned int i = 0; i < state.inputs.size(); i++) {
 			auto sig = block->inputSignature(i);
+			assert(sig.isValid());
+
 			FifoBuffer * buffer = getInputBuffer(Port(block, i));
 
 			if (sig.need && buffer == nullptr)
@@ -222,6 +248,8 @@ namespace oak {
 		state.outputs.resize(block->outputSignatures().size());
 		for (unsigned int i = 0; i < state.outputs.size(); i++) {
 			auto sig = block->outputSignature(i);
+			assert(sig.isValid());
+
 			FifoBuffer * buffer = getOutputBuffer(Port(block, i));
 
 			if (sig.need && buffer == nullptr)

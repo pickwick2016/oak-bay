@@ -39,13 +39,13 @@ namespace oak {
 	Signature Block::inputSignature(unsigned int index)
 	{
 		return vector_get(
-			inputSignatures(), index, Signature(DataType::Unknown, false, -1));
+			inputSignatures(), index, Signature::InvalidSigature());
 	}
 
 	Signature Block::outputSignature(unsigned int index)
 	{
 		return vector_get(
-			outputSignatures(), index, Signature(DataType::Unknown, false, -1));
+			outputSignatures(), index, Signature::InvalidSigature());
 	}
 
 	bool IsSigMatchData(const SignatureList & sigs, vector_raw_data * data)
